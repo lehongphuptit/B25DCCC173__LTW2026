@@ -4,10 +4,20 @@ import BetPanel from '../components/BetPanel';
 import QuestionCard from '../components/QuestionCard';
 import Timer from '../components/Timer';
 import ScoreInfo from '../components/ScoreInfo';
-import { START_SCORE, MIN_BET, TIME_PER_QUESTION, formatScore } from '../data';
-import { validateBet, calcChange } from '../utils';
+import Supports from '../components/Supports';
+import {
+  START_SCORE,
+  MIN_BET,
+  MAX_BET,
+  BET_STEP,
+  TIME_PER_QUESTION,
+  formatScore,
+} from '../data';
+import { validateBet, calcChange, getResult } from '../utils';
 
-const PlayGame = ({ questions, playerName }) => {
+const DEFAULT_TITLE = 'Đặt cược kiến thức';
+
+const PlayGame = ({ questions, playerName, addHistory }) => {
   const navigate = useNavigate();
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(START_SCORE);
@@ -18,12 +28,24 @@ const PlayGame = ({ questions, playerName }) => {
   const [selected, setSelected] = useState(null);
   const [timeLeft, setTimeLeft] = useState(TIME_PER_QUESTION);
 
+  // Quyền trợ giúp
+  const [used, setUsed] = useState({ preview: false, insurance: false, hint: false });
+  const [previewShown, setPreviewShown] = useState(false); // chỉ cho câu đang chơi
+  const [insured, setInsured] = useState(false); // chỉ cho câu đang chơi
+  const [hintShown, setHintShown] = useState(false); // chỉ cho câu đang chơi
+
   const question = questions[index];
   const total = questions.length;
   const betError = validateBet(Number(betInput), score);
 
-  const handleBet = (e) => {
-    e.preventDefault();
+  const handleUse = (name) => {
+    setUsed({ ...used, [name]: true });
+    if (name === 'preview') setPreviewShown(true);
+    if (name === 'insurance') setInsured(true);
+    if (name === 'hint') setHintShown(true);
+  };
+
+  const placeBet = () => {
     if (betError !== '') return;
     setBet(Number(betInput));
     setSelected(null);
@@ -31,14 +53,23 @@ const PlayGame = ({ questions, playerName }) => {
     setStatus('answering');
   };
 
+  const handleBet = (e) => {
+    e.preventDefault();
+    placeBet();
+  };
+
   // choice: vị trí đáp án đã chọn, hoặc null nếu hết giờ
   const handleAnswer = (choice) => {
     if (status !== 'answering') return;
     const correct = choice === question.answer;
-    const change = calcChange(bet, question.level, correct);
+    // Bảo hiểm: sai / hết giờ thì không bị trừ điểm
+    const change = !correct && insured ? 0 : calcChange(bet, question.level, correct);
     const scoreAfter = score + change;
     setScore(scoreAfter);
-    setRounds([...rounds, { id: question.id, bet, correct, change, scoreAfter }]);
+    setRounds([
+      ...rounds,
+      { id: question.id, bet, correct, change, scoreAfter, insured },
+    ]);
     setSelected(choice);
     setStatus('revealed');
   };
@@ -61,19 +92,32 @@ const PlayGame = ({ questions, playerName }) => {
     if (status !== 'revealed') return;
     const id = setTimeout(() => {
       if (score < MIN_BET || index + 1 >= total) {
+        const correctCount = rounds.filter((r) => r.correct).length;
+        addHistory({
+          id: Date.now(),
+          name: playerName.trim(),
+          finalScore: score,
+          correctCount,
+          played: rounds.length,
+          result: getResult(score).title,
+          playedAt: new Date().toLocaleString('vi-VN'),
+        });
         navigate('/result', {
           replace: true,
           state: {
             name: playerName.trim(),
             rounds,
             finalScore: score,
-            correctCount: rounds.filter((r) => r.correct).length,
+            correctCount,
             reason: score < MIN_BET ? 'broke' : 'done',
           },
         });
       } else {
         setIndex(index + 1);
         setBetInput('100');
+        setInsured(false);
+        setPreviewShown(false);
+        setHintShown(false);
         setStatus('betting');
       }
     }, 2000);
@@ -81,9 +125,50 @@ const PlayGame = ({ questions, playerName }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
+  // Phím tắt ở bước đặt cược: ↑ tăng, ↓ giảm, Enter đặt cược
+  useEffect(() => {
+    if (status !== 'betting') return;
+    const handleKey = (e) => {
+      const maxBet = Math.max(
+        MIN_BET,
+        Math.floor(Math.min(MAX_BET, score) / BET_STEP) * BET_STEP
+      );
+      const current = Number(betInput);
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setBetInput(String(Math.max(MIN_BET, Math.min(current + BET_STEP, maxBet))));
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setBetInput(String(Math.max(MIN_BET, Math.min(current - BET_STEP, maxBet))));
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        placeBet();
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, betInput, score]);
+
+  // Tiêu đề tab
+  useEffect(() => {
+    document.title =
+      status === 'betting'
+        ? `Câu ${index + 1}/${total} – đặt cược`
+        : `Câu ${index + 1}/${total} – cược ${bet}`;
+  }, [status, index, total, bet]);
+
+  // Rời màn hình chơi thì trả lại tiêu đề cũ
+  useEffect(() => {
+    return () => {
+      document.title = DEFAULT_TITLE;
+    };
+  }, []);
+
   if (!question) return null;
 
   const last = rounds[rounds.length - 1];
+  const savedByInsurance = last && !last.correct && last.insured;
 
   return (
     <div>
@@ -97,6 +182,7 @@ const PlayGame = ({ questions, playerName }) => {
           onBetChange={setBetInput}
           error={betError}
           onSubmit={handleBet}
+          showPreview={previewShown}
         />
       ) : (
         <div>
@@ -108,26 +194,39 @@ const PlayGame = ({ questions, playerName }) => {
             revealed={status === 'revealed'}
             onSelect={handleAnswer}
           />
+          {hintShown && <p className="hint">Gợi ý: {question.hint}</p>}
           <Timer timeLeft={timeLeft} />
           <ScoreInfo score={score} bet={bet} />
           {status === 'revealed' && last && (
-            <p className={last.correct ? 'change change--up' : 'change change--down'}>
+            <p
+              className={
+                savedByInsurance
+                  ? 'change change--safe'
+                  : last.correct
+                  ? 'change change--up'
+                  : 'change change--down'
+              }
+            >
               {selected === null && 'Hết giờ! '}
-              {last.change > 0
+              {savedByInsurance
+                ? 'Bảo hiểm: không bị trừ điểm'
+                : last.change > 0
                 ? `+${formatScore(last.change)}`
                 : `−${formatScore(-last.change)}`}
             </p>
           )}
         </div>
       )}
+
+      <Supports status={status} used={used} onUse={handleUse} />
     </div>
   );
 };
 
 // Chưa có tên người chơi thì không cho vào thẳng trang chơi
-const Play = ({ questions, playerName }) => {
+const Play = ({ questions, playerName, addHistory }) => {
   if (playerName.trim() === '') return <Navigate to="/" replace />;
-  return <PlayGame questions={questions} playerName={playerName} />;
+  return <PlayGame questions={questions} playerName={playerName} addHistory={addHistory} />;
 };
 
 export default Play;

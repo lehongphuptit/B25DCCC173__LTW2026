@@ -37,3 +37,10 @@ button { padding: 6px 12px; margin-right: 8px; cursor: pointer; }
 .chart-bar { width: 40px; margin: 4px 0; }
 
 .result-actions { margin-top: 16px; }
+
+/* ===== Bài 3 ===== */
+.supports { margin-top: 20px; padding-top: 12px; border-top: 1px dashed #bbb; }
+.preview { padding: 8px 10px; background: #fff8e1; border-left: 4px solid #f9a825; }
+.hint { color: #6a1b9a; font-style: italic; }
+.change--safe { color: #1565c0; }
+.filters select { padding: 6px 8px; }

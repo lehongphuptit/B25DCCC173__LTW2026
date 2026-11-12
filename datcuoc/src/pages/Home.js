@@ -7,8 +7,14 @@ import {
   formatScore,
 } from '../data';
 
-const Home = ({ playerName, setPlayerName }) => {
+const Home = ({ playerName, setPlayerName, history }) => {
   const navigate = useNavigate();
+
+  // Lượt có điểm cuối cao nhất
+  const best = history.reduce(
+    (b, h) => (b === null || h.finalScore > b.finalScore ? h : b),
+    null
+  );
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -19,6 +25,11 @@ const Home = ({ playerName, setPlayerName }) => {
   return (
     <div>
       <h2>Đặt cược kiến thức</h2>
+      {best && (
+        <p>
+          Kỷ lục: {formatScore(best.finalScore)} – {best.name}
+        </p>
+      )}
 
       <h3>Luật chơi</h3>
       <ul>
