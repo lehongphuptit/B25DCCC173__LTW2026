@@ -1,0 +1,17 @@
+.navbar { display: flex; gap: 8px; padding: 12px; background: #f1f1f1; }
+.nav-link { padding: 8px 14px; border-radius: 6px; text-decoration: none; color: #222; }
+.nav-link.active { background: #1b5e20; color: #fff; }
+.content { padding: 16px; }
+
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-bottom: 12px; }
+.filters input[type="text"] { padding: 6px 8px; min-width: 220px; }
+
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+th { background: #eee; }
+
+.options { list-style: none; padding: 0; }
+.options li { padding: 8px 10px; margin-bottom: 6px; border: 1px solid #ccc; border-radius: 6px; }
+.correct { background: #c8e6c9; }
+
+button { padding: 6px 12px; margin-right: 8px; cursor: pointer; }
