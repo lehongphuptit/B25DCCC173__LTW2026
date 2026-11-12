@@ -15,3 +15,25 @@ th { background: #eee; }
 .correct { background: #c8e6c9; }
 
 button { padding: 6px 12px; margin-right: 8px; cursor: pointer; }
+
+/* ===== Bài 2 ===== */
+.error { color: #d32f2f; }
+
+.answers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.answer-btn { padding: 14px; margin: 0; font-size: 15px; text-align: left; border: 1px solid #aaa; border-radius: 6px; background: #fff; color: #222; }
+.answer-btn:disabled { cursor: default; }
+.answer-btn--correct { background: #2e7d32; border-color: #2e7d32; color: #fff; }
+.answer-btn--wrong { background: #d32f2f; border-color: #d32f2f; color: #fff; }
+
+.timer { font-weight: bold; }
+.timer--danger { color: #d32f2f; }
+
+.change { font-size: 20px; font-weight: bold; }
+.change--up { color: #2e7d32; }
+.change--down { color: #d32f2f; }
+
+.chart { display: flex; align-items: flex-end; gap: 12px; margin: 16px 0; overflow-x: auto; }
+.chart-col { display: flex; flex-direction: column; align-items: center; min-width: 70px; font-size: 12px; }
+.chart-bar { width: 40px; margin: 4px 0; }
+
+.result-actions { margin-top: 16px; }

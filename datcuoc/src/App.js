@@ -8,6 +8,8 @@ import Home from './pages/Home';
 import QuestionBank from './pages/QuestionBank';
 import QuestionDetail from './pages/QuestionDetail';
 import NotFound from './pages/NotFound';
+import Play from './pages/Play';
+import Result from './pages/Result';
 import './App.css';
 
 const App = () => {
@@ -15,6 +17,7 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [bookmarks, setBookmarks] = useState([]);
+  const [playerName, setPlayerName] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -46,7 +49,10 @@ const App = () => {
   return (
     <Routes>
       <Route path="/" element={<Layout loading={loading} error={error} />}>
-        <Route index element={<Home />} />
+        <Route
+          index
+          element={<Home playerName={playerName} setPlayerName={setPlayerName} />}
+        />
         <Route
           path="questions"
           element={
@@ -67,8 +73,11 @@ const App = () => {
             />
           }
         />
-        <Route path="play" element={<h2>Màn hình chơi</h2>} />
-        <Route path="result" element={<h2>Kết quả</h2>} />
+        <Route
+          path="play"
+          element={<Play questions={questions} playerName={playerName} />}
+        />
+        <Route path="result" element={<Result />} />
         <Route path="history" element={<h2>Lịch sử</h2>} />
         <Route path="*" element={<NotFound />} />
       </Route>
